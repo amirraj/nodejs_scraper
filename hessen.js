@@ -9,7 +9,7 @@ const noOfResuttsNum = 25;
 const hessen_url =
   "https://www.arztsuchehessen.de/arztsuche/arztsuche.php?page=suche&fachrichtung=59&haus_facharzt=egal&fachrichtung_psycho=--alle--&plz=--alle--&ort=--alle--&entfernung=5&action%5BSucheStarten%5D=&name=--alle--&vorname=--alle--&geschlecht=egal&status=--alle--&genehmigung=--alle--&zusatzbezeichnung=--alle--&testungaufSARSCoV2=--alle--&fremdsprache=--alle--&sz_von_sel=&sz_bis_sel=";
 (async () => {
-  const browser = await puppeteer.launch({ headless: true });
+  const browser = await puppeteer.launch({ headless: false });
   const page = await browser.newPage();
   await page.goto(hessen_url);
 
