@@ -1,8 +1,9 @@
 const puppeteer = require("puppeteer");
 const fuzz = require('fuzzball');
+const fs = require("fs");
 
 (async () => {
-  const browser = await puppeteer.launch({ headless: false });
+  const browser = await puppeteer.launch({ headless: true });
   const page = await browser.newPage();
   await page.goto("https://pubmed.ncbi.nlm.nih.gov/");
 
@@ -45,13 +46,13 @@ const fuzz = require('fuzzball');
   );
 
   let authorName = '';
+  let articleIdToAuthorList = {};
   for (i=0; i< getArticleIds.length ; i++){
     let ratio = -100; 
 
     const page = await browser.newPage();
     await page.goto("https://pubmed.ncbi.nlm.nih.gov"+getArticleIds[i]);
     await page.waitForSelector(".inline-authors > div.authors > div.authors-list > span > a");
-    
      
     const hcpNameList = await page.evaluate(
       () => Array.from(
@@ -67,17 +68,54 @@ const fuzz = require('fuzzball');
         authorName = name;
       }
     });
-   
+    articleIdToAuthorList[getArticleIds[i]] = hcpNameList;
     page.close();
-    break;
   }
-   
+  // console.log('author names for all article',articleIdToAuthorList); 
+  // console.log('author name',authorName); 
+  fs.writeFile("pubmed_details_nodejs.json", "[", () => {});
 
-  console.log('author name is ',authorName);
-// console.log('The ids are ',getArticleIds.length);
- console.log('The ratio is ',fuzz.ratio("karen voigt","voigt karen"));
+ for (i=0; i< getArticleIds.length ; i++){
 
+  if(!articleIdToAuthorList[getArticleIds[i]].includes('Karen Voigt')) continue;
+  console.log('passed id',getArticleIds[i]);
+  const authors = articleIdToAuthorList[getArticleIds[i]];
+  const fetchDataPage = await browser.newPage();
+  await fetchDataPage.goto("https://pubmed.ncbi.nlm.nih.gov"+getArticleIds[i]);
+  
+  const fetchDetails = await fetchDataPage.evaluate(() => {
+  const headingTitle = document.querySelector(".heading-title").innerHTML.trim();
 
+  const affiliationsTags = document.querySelectorAll(".affiliations > ul.item-list >li");
+  let affiliations = [];
+  for( j =0; j< affiliationsTags.length/2 ; j++){
+         affiliations[j] = affiliationsTags[j].innerText;
+  }
+
+  const abstractTags = document.querySelectorAll(".abstract-content > p");
+  let abstract = '';
+  for( j =0; j< abstractTags.length ; j++){
+    abstract += abstractTags[j].innerText.trim();
+}
+  const pubmedId = document.querySelectorAll("span.pubmed > strong[title='PubMed ID']")[0].innerText;
+
+    return {title: headingTitle, affiliations : affiliations, abstract : abstract, pubmedId : pubmedId};
+});
+
+  fetchDetails['authors'] = authors;
+  
+  fs.appendFile(
+    "pubmed_details_nodejs.json",
+    JSON.stringify(fetchDetails) + ",",
+    () => {}
+  );
+
+  //console.log('Data is',fetchDetails);
+  fetchDataPage.close();
+
+}
+
+  fs.appendFile("pubmed_details_nodejs.json", "]", () => {});
   await browser.close();
 
 })();
