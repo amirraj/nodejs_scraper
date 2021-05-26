@@ -7,10 +7,16 @@ var os = require("os");
   const browser = await puppeteer.launch({ headless: false, defaultViewport: null,ignoreHTTPSErrors: true, });
   var links = new Set();
   var queue = [];
-  queue.push("https://www.reddit.com/");
+  // queue.push("https://www.twitter.com/");
+  // queue.push("https://www.reddit.com/");
+  // queue.push("https://www.youtube.com/");
+  // queue.push("https://www.quora.com/");
+  // queue.push("https://www.stackoverflow.com/");
+  queue.push("https://en.wikipedia.org/wiki/Main_Page");
 
-  while(links.size <=10){
+  while(links.size <=1000){
       const page = await browser.newPage();
+      try{
       var link = queue.shift();
       await page.goto(link);
       await page.waitForTimeout(5000);
@@ -32,7 +38,7 @@ var os = require("os");
      })
      link = link.replace('/',' ');
      link = link.replace(/\\/,' ');
-     fs.appendFile('negative.txt', text, function (err) {
+     fs.writeFile('./crawled/file no '+links.size+'(2).txt', text, function (err) {
         if(err) {
             console.log(err);
       } 
@@ -41,7 +47,9 @@ var os = require("os");
       }
       })
 
-  
+    }catch(err){console.error(err);} 
+
+  page.close();
 }
 await browser.close();
 })();
